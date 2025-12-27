@@ -1,0 +1,31 @@
+{
+  "name": "made",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jamesbushmaen-hub/Made.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jamesbushmaen-hub/Made/issues"
+  },
+  "homepage": "https://github.com/jamesbushmaen-hub/Made#readme",
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.3.0"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^8.43.0",
+    "@babylonjs/loaders": "^8.43.0",
+    "@babylonjs/materials": "^8.43.0"
+  }
+}
