@@ -25,6 +25,10 @@ export class Player {
     private baseFov = 1.3; // Approx 75 degrees in radians
     private adsFov = 0.8;  // Approx 45 degrees
 
+    // Stats
+    public health: number = 100;
+    public maxHealth: number = 100;
+
     constructor(scene: Scene, inputSystem: InputSystem) {
         this.scene = scene;
         this.inputSystem = inputSystem;
@@ -56,6 +60,10 @@ export class Player {
 
     public getPosition(): Vector3 {
         return this.mesh.position;
+    }
+
+    public getWeapon(): Weapon {
+        return this.currentWeapon;
     }
 
     update(): void {

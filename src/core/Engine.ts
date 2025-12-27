@@ -3,6 +3,8 @@ import { Player } from '../entities/Player';
 import { InputSystem } from '../systems/InputSystem';
 import { Enemy } from '../entities/Enemy';
 import { ENEMIES } from '../config/enemyConfig';
+import { WaveSystem } from '../systems/WaveSystem';
+import { HUD } from '../ui/HUD';
 
 export class GameEngine {
     private engine: Engine;
@@ -10,6 +12,8 @@ export class GameEngine {
     private canvas: HTMLCanvasElement;
     private player: Player | null = null;
     private inputSystem: InputSystem;
+    private waveSystem: WaveSystem;
+    private hud: HUD;
     private enemies: Enemy[] = [];
 
     constructor(canvas: HTMLCanvasElement) {
@@ -17,6 +21,8 @@ export class GameEngine {
         this.engine = new Engine(canvas, true);
         this.scene = new Scene(this.engine);
         this.inputSystem = new InputSystem(this.scene);
+        this.waveSystem = new WaveSystem(this);
+        this.hud = new HUD();
         
         // Handle window resize
         window.addEventListener('resize', () => {
@@ -51,8 +57,8 @@ export class GameEngine {
         this.player = new Player(this.scene, this.inputSystem);
         await this.player.initialize(new Vector3(0, 2, 0));
 
-        // Spawn Test Enemy
-        this.spawnEnemy('basic', new Vector3(10, 1, 10));
+        // Start Waves
+        this.waveSystem.start();
 
         // Lock cursor on click
         this.scene.onPointerDown = () => {
@@ -62,7 +68,7 @@ export class GameEngine {
         };
     }
 
-    private spawnEnemy(type: string, position: Vector3): void {
+    public spawnEnemy(type: string, position: Vector3): void {
         if (!this.player) return;
         
         const stats = ENEMIES[type];
@@ -78,7 +84,20 @@ export class GameEngine {
             
             if (this.player) {
                 this.player.update();
+                
+                // Update HUD
+                const weapon = this.player.getWeapon();
+                this.hud.update(
+                    this.player.health,
+                    weapon.currentAmmo,
+                    weapon.reserveAmmo,
+                    this.waveSystem.wave,
+                    this.enemies.length
+                );
             }
+
+            // Update Waves
+            this.waveSystem.update(deltaTime, this.enemies.length);
 
             // Update Enemies
             for (let i = this.enemies.length - 1; i >= 0; i--) {
