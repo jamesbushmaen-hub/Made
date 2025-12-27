@@ -3,6 +3,7 @@ import { Scene, ActionManager, ExecuteCodeAction } from '@babylonjs/core';
 export class InputSystem {
     private scene: Scene;
     private inputMap: { [key: string]: boolean } = {};
+    private mouseMap: { [button: number]: boolean } = {};
     
     // Configurable bindings
     public bindings = {
@@ -13,7 +14,9 @@ export class InputSystem {
         jump: ' ', // Space
         crouch: 'c',
         sprint: 'shift',
-        reload: 'r'
+        reload: 'r',
+        fire: 0, // Left click
+        aim: 2   // Right click
     };
 
     constructor(scene: Scene) {
@@ -35,10 +38,28 @@ export class InputSystem {
             const key = evt.sourceEvent.key.toLowerCase();
             this.inputMap[key] = false;
         }));
+
+        // Mouse Down
+        this.scene.onPointerDown = (evt) => {
+            if (evt.button !== -1) {
+                this.mouseMap[evt.button] = true;
+            }
+        };
+
+        // Mouse Up
+        this.scene.onPointerUp = (evt) => {
+            if (evt.button !== -1) {
+                this.mouseMap[evt.button] = false;
+            }
+        };
     }
 
     public isKeyDown(key: string): boolean {
         return this.inputMap[key.toLowerCase()] === true;
+    }
+
+    public isMouseButtonDown(button: number): boolean {
+        return this.mouseMap[button] === true;
     }
 
     public getMovementVector(): { x: number, z: number } {
@@ -63,5 +84,17 @@ export class InputSystem {
 
     public isSprintPressed(): boolean {
         return this.isKeyDown(this.bindings.sprint);
+    }
+
+    public isFirePressed(): boolean {
+        return this.isMouseButtonDown(this.bindings.fire);
+    }
+
+    public isAimPressed(): boolean {
+        return this.isMouseButtonDown(this.bindings.aim);
+    }
+
+    public isReloadPressed(): boolean {
+        return this.isKeyDown(this.bindings.reload);
     }
 }

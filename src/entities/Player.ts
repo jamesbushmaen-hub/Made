@@ -1,11 +1,14 @@
 import { Scene, Vector3, MeshBuilder, Mesh, UniversalCamera, Ray, Scalar } from '@babylonjs/core';
 import { InputSystem } from '../systems/InputSystem';
+import { Weapon } from './Weapon';
+import { WEAPONS } from '../config/weaponConfig';
 
 export class Player {
     private scene: Scene;
     private inputSystem: InputSystem;
     private camera!: UniversalCamera;
     private mesh!: Mesh;
+    private currentWeapon!: Weapon;
     
     // Movement Parameters
     private speed = 4.5;
@@ -18,6 +21,9 @@ export class Player {
     private velocity = new Vector3(0, 0, 0);
     private isGrounded = false;
     private isCrouching = false;
+    private isAds = false;
+    private baseFov = 1.3; // Approx 75 degrees in radians
+    private adsFov = 0.8;  // Approx 45 degrees
 
     constructor(scene: Scene, inputSystem: InputSystem) {
         this.scene = scene;
@@ -42,6 +48,10 @@ export class Player {
         this.camera.minZ = 0.1;
         this.camera.angularSensibility = 1000; // Lower is faster
         this.camera.inertia = 0.1;
+        this.camera.fov = this.baseFov;
+
+        // Initialize Weapon
+        this.currentWeapon = new Weapon(WEAPONS.assault_rifle, this.scene);
     }
 
     update(): void {
@@ -49,6 +59,37 @@ export class Player {
         
         this.handleMovement(deltaTime);
         this.handleCrouch(deltaTime);
+        this.handleWeapon(deltaTime);
+    }
+
+    private handleWeapon(deltaTime: number): void {
+        // ADS Logic
+        if (this.inputSystem.isAimPressed()) {
+            this.isAds = true;
+            this.camera.fov = Scalar.Lerp(this.camera.fov, this.adsFov, 10 * deltaTime);
+            this.camera.angularSensibility = 2000; // Slower mouse when aiming
+        } else {
+            this.isAds = false;
+            this.camera.fov = Scalar.Lerp(this.camera.fov, this.baseFov, 10 * deltaTime);
+            this.camera.angularSensibility = 1000;
+        }
+
+        // Fire Logic
+        if (this.inputSystem.isFirePressed()) {
+            // Get camera direction for shooting
+            const origin = this.camera.globalPosition;
+            const direction = this.camera.getDirection(Vector3.Forward());
+            
+            this.currentWeapon.fire(origin, direction, this.isAds);
+        }
+
+        // Reload
+        if (this.inputSystem.isReloadPressed()) {
+            this.currentWeapon.reload();
+        }
+        
+        // Update weapon state (recoil recovery, etc)
+        this.currentWeapon.update(deltaTime);
     }
 
     private handleMovement(deltaTime: number): void {
