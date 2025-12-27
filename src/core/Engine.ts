@@ -1,6 +1,8 @@
 import { Engine, Scene, Vector3, HemisphericLight, MeshBuilder, Color4 } from '@babylonjs/core';
 import { Player } from '../entities/Player';
 import { InputSystem } from '../systems/InputSystem';
+import { Enemy } from '../entities/Enemy';
+import { ENEMIES } from '../config/enemyConfig';
 
 export class GameEngine {
     private engine: Engine;
@@ -8,6 +10,7 @@ export class GameEngine {
     private canvas: HTMLCanvasElement;
     private player: Player | null = null;
     private inputSystem: InputSystem;
+    private enemies: Enemy[] = [];
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -48,6 +51,9 @@ export class GameEngine {
         this.player = new Player(this.scene, this.inputSystem);
         await this.player.initialize(new Vector3(0, 2, 0));
 
+        // Spawn Test Enemy
+        this.spawnEnemy('basic', new Vector3(10, 1, 10));
+
         // Lock cursor on click
         this.scene.onPointerDown = () => {
             if (document.pointerLockElement !== this.canvas) {
@@ -56,11 +62,33 @@ export class GameEngine {
         };
     }
 
+    private spawnEnemy(type: string, position: Vector3): void {
+        if (!this.player) return;
+        
+        const stats = ENEMIES[type];
+        if (!stats) return;
+
+        const enemy = new Enemy(this.scene, stats, this.player, position);
+        this.enemies.push(enemy);
+    }
+
     start(): void {
         this.engine.runRenderLoop(() => {
+            const deltaTime = this.engine.getDeltaTime() / 1000;
+            
             if (this.player) {
                 this.player.update();
             }
+
+            // Update Enemies
+            for (let i = this.enemies.length - 1; i >= 0; i--) {
+                const enemy = this.enemies[i];
+                enemy.update(deltaTime);
+                if (enemy.isDead) {
+                    this.enemies.splice(i, 1);
+                }
+            }
+
             this.scene.render();
         });
     }

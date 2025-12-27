@@ -54,6 +54,10 @@ export class Player {
         this.currentWeapon = new Weapon(WEAPONS.assault_rifle, this.scene);
     }
 
+    public getPosition(): Vector3 {
+        return this.mesh.position;
+    }
+
     update(): void {
         const deltaTime = this.scene.getEngine().getDeltaTime() / 1000;
         
