@@ -11,11 +11,16 @@ export class Weapon {
     private isReloading: boolean = false;
     // private weaponMesh: Mesh | null = null; // Visual representation to be added
 
+    // Optimization
+    private _ray: Ray;
+    private _tempDirection = new Vector3();
+
     constructor(stats: WeaponStats, scene: Scene) {
         this.stats = stats;
         this.scene = scene;
         this.currentAmmo = stats.magazineSize;
         this.reserveAmmo = stats.reserveAmmo;
+        this._ray = new Ray(Vector3.Zero(), Vector3.Forward());
     }
 
     public canFire(): boolean {
@@ -35,23 +40,21 @@ export class Weapon {
         const spreadRad = (spreadAngle * Math.PI) / 180;
         
         // Apply spread to direction
-        // Simple spread implementation: perturbation
         const spreadX = (Math.random() - 0.5) * spreadRad;
         const spreadY = (Math.random() - 0.5) * spreadRad;
         
-        // Create rotation matrix for spread
-        // Ideally we need a local coordinate system relative to direction
-        // For MVP, just adding to direction vector (less accurate but works for small angles)
-        const finalDirection = direction.clone();
-        finalDirection.x += spreadX;
-        finalDirection.y += spreadY;
-        finalDirection.normalize();
+        // Use temp vector
+        this._tempDirection.copyFrom(direction);
+        this._tempDirection.x += spreadX;
+        this._tempDirection.y += spreadY;
+        this._tempDirection.normalize();
 
-        // Raycast
-        const range = this.stats.range.maximum;
-        const ray = new Ray(origin, finalDirection, range);
+        // Update Ray
+        this._ray.origin = origin;
+        this._ray.direction = this._tempDirection;
+        this._ray.length = this.stats.range.maximum;
         
-        const hit = this.scene.pickWithRay(ray, (mesh) => {
+        const hit = this.scene.pickWithRay(this._ray, (mesh) => {
             return mesh.isPickable && mesh.name !== "player" && mesh.name !== "skybox";
         });
 
@@ -65,13 +68,14 @@ export class Weapon {
             
             // Cleanup impact after 1 sec
             setTimeout(() => {
-                sphere.dispose();
+                if (!sphere.isDisposed()) {
+                    sphere.dispose();
+                }
             }, 1000);
 
-            // Log hit for now
-            // console.log(`Hit ${hit.pickedMesh?.name} at distance ${hit.distance}`);
-            
             // TODO: Apply damage to entity
+            // Check if hit mesh has 'enemy' metadata or name pattern
+            // For now, no damage logic connected (Enemy class has takeDamage but we need to map mesh to Enemy instance)
         }
     }
 

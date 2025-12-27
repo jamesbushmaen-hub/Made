@@ -11,6 +11,10 @@ export class Enemy {
     private player: Player;
     private currentHealth: number;
     private lastAttackTime: number = 0;
+    
+    // Optimization: Reusable vectors
+    private _direction = new Vector3();
+    private _lookTarget = new Vector3();
 
     constructor(scene: Scene, stats: EnemyStats, player: Player, position: Vector3) {
         this.scene = scene;
@@ -36,21 +40,25 @@ export class Enemy {
 
         // Simple AI: Move towards player
         const playerPos = this.player.getPosition();
-        const direction = playerPos.subtract(this.mesh.position);
+        // this._direction = playerPos - this.mesh.position
+        playerPos.subtractToRef(this.mesh.position, this._direction);
         
-        const distance = direction.length();
-        direction.normalize();
+        const distance = this._direction.length();
+        this._direction.normalize();
 
         // Move if not in attack range
         if (distance > this.stats.attackRange) {
             // Apply gravity
-            const velocity = direction.scale(this.stats.speed * deltaTime);
+            // Reuse _direction for velocity but be careful not to mutate it if needed later
+            // velocity = direction * speed * dt
+            const velocity = this._direction.scale(this.stats.speed * deltaTime);
             velocity.y = -9.81 * deltaTime; // Simple gravity
 
             this.mesh.moveWithCollisions(velocity);
             
             // Look at player (ignore Y)
-            this.mesh.lookAt(new Vector3(playerPos.x, this.mesh.position.y, playerPos.z));
+            this._lookTarget.set(playerPos.x, this.mesh.position.y, playerPos.z);
+            this.mesh.lookAt(this._lookTarget);
         } else {
             // Attack
             this.attack();
